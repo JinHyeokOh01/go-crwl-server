@@ -1,0 +1,16 @@
+services:
+  web:
+    image: golang:1.23.1
+    working_dir: /app
+    ports:
+      - "5000:5000"
+    environment:
+      - GIN_MODE=release
+    volumes:
+      - .:/app
+    command: >
+      sh -c "
+        go mod tidy &&
+        ls -la &&
+        go run main.go"
+    restart: always
