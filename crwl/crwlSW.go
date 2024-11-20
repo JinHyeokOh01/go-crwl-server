@@ -65,7 +65,7 @@ func crwlSWNotices(url string) ([]models.Notice, error) {
 
         notices = append(notices, notice)
     })
-    //날짜별 정렬
+    //날짜순 정렬
     sort.Sort(NoticeSlice(notices))
 
     return notices, nil
