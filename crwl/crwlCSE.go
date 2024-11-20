@@ -23,12 +23,6 @@ func GetCSE(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, notices)
-
-    /*
-    for _, notice := range notices {
-        fmt.Printf("제목: %s\n날짜: %s\n링크: %s\n---\n", notice.Title, notice.Date, notice.Link)
-    }
-    */
 }
 
 func crwlCSENotices(url string) ([]CSENotice, error) {
@@ -64,7 +58,7 @@ func crwlCSENotices(url string) ([]CSENotice, error) {
 
         notice := CSENotice{}
 
-        // 제목과 링크
+        // 제목
         titleLink := s.Find("td.tal a")
         notice.Title = strings.TrimSpace(titleLink.Text())
 

@@ -24,12 +24,6 @@ func GetSW(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, notices)
-
-    /*
-    for _, notice := range notices {
-        fmt.Printf("제목: %s\n날짜: %s\n링크: %s\n---\n", notice.Title, notice.Date, notice.Link)
-    }
-    */
 }
 
 func crwlSWNotices(url string) ([]SWNotice, error) {
