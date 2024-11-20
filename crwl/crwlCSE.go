@@ -2,7 +2,6 @@ package crwl
 
 import (
     "fmt"
-    "log"
     "net/http"
     "strings"
     "time"
@@ -10,18 +9,20 @@ import (
     "github.com/gin-gonic/gin"
 )
 
-type Notice struct {
+type CSENotice struct {
     Title string
     Date  string
-    Link  string
 }
 
 func GetCSE(c *gin.Context) {
     url := "https://ce.khu.ac.kr/ce/user/bbs/BMSR00040/list.do?menuNo=1600045"
-    notices, err := crawlCSENotices(url)
+    notices, err := crwlCSENotices(url)
     if err != nil {
-        log.Fatal(err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
     }
+
+    c.JSON(http.StatusOK, notices)
 
     /*
     for _, notice := range notices {
@@ -30,7 +31,7 @@ func GetCSE(c *gin.Context) {
     */
 }
 
-func crawlCSENotices(url string) ([]Notice, error) {
+func crwlCSENotices(url string) ([]CSENotice, error) {
     client := &http.Client{
         Timeout: 30 * time.Second,
     }
@@ -53,7 +54,7 @@ func crawlCSENotices(url string) ([]Notice, error) {
         return nil, err
     }
 
-    var notices []Notice
+    var notices []CSENotice
 
     doc.Find("tbody tr").Each(func(i int, s *goquery.Selection) {
         number := strings.TrimSpace(s.Find("td.align-middle").Text())
@@ -61,22 +62,11 @@ func crawlCSENotices(url string) ([]Notice, error) {
             return
         }
 
-        notice := Notice{}
+        notice := CSENotice{}
 
         // 제목과 링크
         titleLink := s.Find("td.tal a")
         notice.Title = strings.TrimSpace(titleLink.Text())
-        
-        // 링크 생성
-        href, _ := titleLink.Attr("href")
-        if href != "" {
-            idStart := strings.Index(href, "'") + 1
-            idEnd := strings.LastIndex(href, "'")
-            if idStart > 0 && idEnd > idStart {
-                noticeID := href[idStart:idEnd]
-                notice.Link = fmt.Sprintf("https://ce.khu.ac.kr/ce/user/bbs/BMSR00040/view.do?nttId=%s&menuNo=1600045", noticeID)
-            }
-        }
 
         // 날짜
         notice.Date = strings.TrimSpace(s.Find("td:nth-child(4)").Text())
@@ -87,12 +77,12 @@ func crawlCSENotices(url string) ([]Notice, error) {
     return notices, nil
 }
 
-func crawlAllPages(baseURL string, maxPages int) ([]Notice, error) {
-    var allNotices []Notice
+func crwlAllPages(baseURL string, maxPages int) ([]CSENotice, error) {
+    var allNotices []CSENotice
 
     for page := 1; page <= maxPages; page++ {
         pageURL := fmt.Sprintf("%s&pageIndex=%d", baseURL, page)
-        notices, err := crawlKHUNotices(pageURL)
+        notices, err := crwlCSENotices(pageURL)
         if err != nil {
             return nil, err
         }

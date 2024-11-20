@@ -2,7 +2,6 @@ package crwl
 
 import (
     "fmt"
-    "log"
     "net/http"
     "strings"
     "time"
@@ -10,7 +9,7 @@ import (
     "github.com/gin-gonic/gin"
 )
 
-type Notice struct {
+type SWNotice struct {
     Title string
     Date  string
     Link  string
@@ -18,7 +17,7 @@ type Notice struct {
 
 func GetSW(c *gin.Context) {
     url := "https://swedu.khu.ac.kr/bbs/board.php?bo_table=07_01"
-    notices, err := crwlKHUNotices(url)
+    notices, err := crwlSWNotices(url)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -33,7 +32,7 @@ func GetSW(c *gin.Context) {
     */
 }
 
-func crwlSWNotices(url string) ([]Notice, error) {
+func crwlSWNotices(url string) ([]SWNotice, error) {
     client := &http.Client{
         Timeout: 30 * time.Second,
     }
@@ -56,10 +55,10 @@ func crwlSWNotices(url string) ([]Notice, error) {
         return nil, err
     }
 
-    var notices []Notice
+    var notices []SWNotice
 
     doc.Find("tbody tr").Each(func(i int, s *goquery.Selection) {
-        notice := Notice{}
+        notice := SWNotice{}
 
         // 제목과 링크
 		titleLink := s.Find(".bo_tit a")
@@ -79,12 +78,12 @@ func crwlSWNotices(url string) ([]Notice, error) {
     return notices, nil
 }
 
-func crawlAllPages(baseURL string, maxPages int) ([]Notice, error) {
-    var allNotices []Notice
+func crwlSWPages(baseURL string, maxPages int) ([]SWNotice, error) {
+    var allNotices []SWNotice
 
     for page := 1; page <= maxPages; page++ {
         pageURL := fmt.Sprintf("%s&pageIndex=%d", baseURL, page)
-        notices, err := crawlKHUNotices(pageURL)
+        notices, err := crwlSWNotices(pageURL)
         if err != nil {
             return nil, err
         }

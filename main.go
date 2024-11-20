@@ -3,8 +3,6 @@ package main
 import(
 	"github.com/JinHyeokOh01/go-crwl-server/crwl"
 	"github.com/gin-gonic/gin"
-
-	"fmt"
 )
 
 func main() {
