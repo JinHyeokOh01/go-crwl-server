@@ -1,4 +1,3 @@
-//정렬 조건 : 날짜순(내림차순)
 package crwl
 
 import(
@@ -8,6 +7,7 @@ import(
 
 type NoticeSlice []models.Notice
 
+//정렬 조건 : 날짜순(내림차순)
 func (n NoticeSlice) Len() int        { return len(n) }
 func (n NoticeSlice) Swap(i, j int)   { n[i], n[j] = n[j], n[i] }
 func (n NoticeSlice) Less(i, j int) bool {
