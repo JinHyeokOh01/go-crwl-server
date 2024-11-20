@@ -1,18 +1,14 @@
 package crwl
 
 import (
-    "fmt"
     "net/http"
     "strings"
     "time"
+    "sort"
     "github.com/PuerkitoBio/goquery"
     "github.com/gin-gonic/gin"
+    "github.com/JinHyeokOh01/go-crwl-server/models"
 )
-
-type CSENotice struct {
-    Title string
-    Date  string
-}
 
 func GetCSE(c *gin.Context) {
     url := "https://ce.khu.ac.kr/ce/user/bbs/BMSR00040/list.do?menuNo=1600045"
@@ -25,7 +21,7 @@ func GetCSE(c *gin.Context) {
     c.JSON(http.StatusOK, notices)
 }
 
-func crwlCSENotices(url string) ([]CSENotice, error) {
+func crwlCSENotices(url string) ([]models.Notice, error) {
     client := &http.Client{
         Timeout: 30 * time.Second,
     }
@@ -48,15 +44,10 @@ func crwlCSENotices(url string) ([]CSENotice, error) {
         return nil, err
     }
 
-    var notices []CSENotice
+    var notices []models.Notice
 
     doc.Find("tbody tr").Each(func(i int, s *goquery.Selection) {
-        number := strings.TrimSpace(s.Find("td.align-middle").Text())
-        if number == "대학" || number == "공지" {
-            return
-        }
-
-        notice := CSENotice{}
+        notice := models.Notice{}
 
         // 제목
         titleLink := s.Find("td.tal a")
@@ -67,27 +58,6 @@ func crwlCSENotices(url string) ([]CSENotice, error) {
 
         notices = append(notices, notice)
     })
-
+    sort.Sort(NoticeSlice(notices))
     return notices, nil
-}
-
-func crwlAllPages(baseURL string, maxPages int) ([]CSENotice, error) {
-    var allNotices []CSENotice
-
-    for page := 1; page <= maxPages; page++ {
-        pageURL := fmt.Sprintf("%s&pageIndex=%d", baseURL, page)
-        notices, err := crwlCSENotices(pageURL)
-        if err != nil {
-            return nil, err
-        }
-
-        if len(notices) == 0 {
-            break
-        }
-
-        allNotices = append(allNotices, notices...)
-        time.Sleep(1 * time.Second)
-    }
-
-    return allNotices, nil
 }
