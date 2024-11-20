@@ -7,6 +7,7 @@ import (
     "strings"
     "time"
     "github.com/PuerkitoBio/goquery"
+    "github.com/gin-gonic/gin"
 )
 
 type Notice struct {
@@ -15,17 +16,18 @@ type Notice struct {
     Link  string
 }
 
-func GetCSE() {
+func GetCSE(c *gin.Context) {
     url := "https://ce.khu.ac.kr/ce/user/bbs/BMSR00040/list.do?menuNo=1600045"
     notices, err := crawlCSENotices(url)
     if err != nil {
         log.Fatal(err)
     }
 
-    // 결과 출력
+    /*
     for _, notice := range notices {
         fmt.Printf("제목: %s\n날짜: %s\n링크: %s\n---\n", notice.Title, notice.Date, notice.Link)
     }
+    */
 }
 
 func crawlCSENotices(url string) ([]Notice, error) {

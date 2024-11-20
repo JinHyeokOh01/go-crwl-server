@@ -7,6 +7,7 @@ import (
     "strings"
     "time"
     "github.com/PuerkitoBio/goquery"
+    "github.com/gin-gonic/gin"
 )
 
 type Notice struct {
@@ -15,17 +16,21 @@ type Notice struct {
     Link  string
 }
 
-func GetSW() {
+func GetSW(c *gin.Context) {
     url := "https://swedu.khu.ac.kr/bbs/board.php?bo_table=07_01"
     notices, err := crwlKHUNotices(url)
     if err != nil {
-        log.Fatal(err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
     }
 
-    // 결과 출력
+    c.JSON(http.StatusOK, notices)
+
+    /*
     for _, notice := range notices {
         fmt.Printf("제목: %s\n날짜: %s\n링크: %s\n---\n", notice.Title, notice.Date, notice.Link)
     }
+    */
 }
 
 func crwlSWNotices(url string) ([]Notice, error) {
