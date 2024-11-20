@@ -17,7 +17,7 @@ func GetCSE(c *gin.Context) {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
-
+    //결과값을 JSON으로 반환
     c.JSON(http.StatusOK, notices)
 }
 
@@ -46,10 +46,12 @@ func crwlCSENotices(url string) ([]models.Notice, error) {
 
     var notices []models.Notice
 
+    //HTML에서 해당 태그와 일치하는 부분에서 데이터 가져오기
     doc.Find("tbody tr").Each(func(i int, s *goquery.Selection) {
         notice := models.Notice{}
 
         // 제목
+        // CSE 홈페이지는 개별 공지 글마다 URL이 존재하지 않음.
         titleLink := s.Find("td.tal a")
         notice.Title = strings.TrimSpace(titleLink.Text())
 
@@ -58,6 +60,7 @@ func crwlCSENotices(url string) ([]models.Notice, error) {
 
         notices = append(notices, notice)
     })
+    //날짜순 정렬
     sort.Sort(NoticeSlice(notices))
     return notices, nil
 }

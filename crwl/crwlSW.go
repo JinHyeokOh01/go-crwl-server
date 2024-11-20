@@ -17,7 +17,7 @@ func GetSW(c *gin.Context) {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
-
+    //결과값을 JSON으로 반환
     c.JSON(http.StatusOK, notices)
 }
 
@@ -46,6 +46,8 @@ func crwlSWNotices(url string) ([]models.Notice, error) {
 
     var notices []models.Notice
 
+    //HTML에서 해당 태그와 일치하는 부분에서 데이터 가져오기
+    //컴공과와 소중단의 HTML 페이지 구조는 약간 다름.
     doc.Find("tbody tr").Each(func(i int, s *goquery.Selection) {
         notice := models.Notice{}
 
@@ -63,7 +65,7 @@ func crwlSWNotices(url string) ([]models.Notice, error) {
 
         notices = append(notices, notice)
     })
-
+    //날짜별 정렬
     sort.Sort(NoticeSlice(notices))
 
     return notices, nil
