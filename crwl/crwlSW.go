@@ -8,7 +8,23 @@ import (
     "github.com/PuerkitoBio/goquery"
     "github.com/gin-gonic/gin"
     "github.com/JinHyeokOh01/go-crwl-server/models"
+
+    "net/url"
 )
+
+func getIDFromURL(urlStr string) string {
+    // 1. URL을 파싱합니다
+    parsedURL, err := url.Parse(urlStr)
+    if err != nil {
+        return ""
+    }
+    
+    // 2. 쿼리 파라미터를 파싱합니다
+    values, _ := url.ParseQuery(parsedURL.RawQuery)
+    
+    // 3. wr_id 값을 가져옵니다
+    return values.Get("wr_id")
+}
 
 func GetSW(c *gin.Context) {
     url := "https://swedu.khu.ac.kr/bbs/board.php?bo_table=07_01"
@@ -50,14 +66,15 @@ func crwlSWNotices(url string) ([]models.Notice, error) {
     //컴공과와 소중단의 HTML 페이지 구조는 약간 다름.
     doc.Find("tbody tr").Each(func(i int, s *goquery.Selection) {
         notice := models.Notice{}
-
-        // 제목과 링크
+        // 제목
 		titleLink := s.Find(".bo_tit a")
 		notice.Title = strings.TrimSpace(titleLink.Text())
 
 		// 링크 가져오기
 		if link, exists := titleLink.Attr("href"); exists {
 			notice.Link = link
+            //PRIMARY KEY로 사용하기 위해 글의 고유 ID를 가져옴
+            notice.Number = getIDFromURL(link)
 		}
 
         // 날짜
