@@ -5,7 +5,11 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - GIN_MODE=release
+      GIN_MODE: release
+      MYSQL_HOST: db
+      MYSQL_USER: mydb
+      MYSQL_PASSWORD: mydb
+      MYSQL_DATABASE: mydb
     volumes:
       - .:/app
     command: >
@@ -14,3 +18,22 @@ services:
         ls -la &&
         go run main.go"
     restart: always
+
+  db:
+    image: mysql:8.0.40
+    platform: linux/amd64
+    container_name: db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: mydb
+      MYSQL_PASSWORD: mydb
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - $PWD/_tools/mysql/conf.d:/etc/mysql/conf.d:cached
+    restart: always
+
+volumes:
+  mysql_data:
