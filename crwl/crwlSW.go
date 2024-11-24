@@ -8,6 +8,7 @@ import (
     "github.com/PuerkitoBio/goquery"
     "github.com/gin-gonic/gin"
     "github.com/JinHyeokOh01/go-crwl-server/models"
+    "github.com/JinHyeokOh01/go-crwl-server/repository"
 
     "net/url"
 )
@@ -33,8 +34,50 @@ func GetSW(c *gin.Context) {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
-    //결과값을 JSON으로 반환
-    c.JSON(http.StatusOK, notices)
+
+    // 데이터베이스에 자동 저장
+    noticeRepo := repository.NewNoticeRepository()
+
+    // 기존 공지사항 번호들 조회
+    existingNotices, err := noticeRepo.GetSWNumbers()
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "기존 데이터 조회 실패: " + err.Error()})
+        return
+    }
+
+    // 새로운 공지사항 필터링
+    existingMap := make(map[string]bool)
+    for _, num := range existingNotices {
+        existingMap[num] = true
+    }
+
+    var newNotices []models.Notice
+    for _, notice := range notices {
+        if !existingMap[notice.Number] {
+            newNotices = append(newNotices, notice)
+        }
+    }
+
+    // DB에 저장
+    err = noticeRepo.CreateBatchSW(notices)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "저장 실패: " + err.Error()})
+        return
+    }
+
+    // 새로운 공지사항만 응답으로 반환
+    if len(newNotices) > 0 {
+        c.JSON(http.StatusOK, gin.H{
+            "message": "새로운 SW 공지사항이 발견되었습니다",
+            "count": len(newNotices),
+            "notices": newNotices,
+        })
+    } else {
+        c.JSON(http.StatusOK, gin.H{
+            "message": "새로운 SW 공지사항이 없습니다",
+            "count": 0,
+        })
+    }
 }
 
 func crwlSWNotices(url string) ([]models.Notice, error) {

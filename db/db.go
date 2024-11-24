@@ -31,20 +31,28 @@ func Initialize() error {
 }
 
 func createTables() error {
-    query := `
-        CREATE TABLE IF NOT EXISTS notices (
-            id BIGINT AUTO_INCREMENT PRIMARY KEY,
-            number VARCHAR(255) NOT NULL,
+    queries := []string{
+        `CREATE TABLE IF NOT EXISTS cse_notices (
+            number VARCHAR(255) PRIMARY KEY,
             title VARCHAR(255) NOT NULL,
             date VARCHAR(255) NOT NULL,
-            link VARCHAR(255) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            UNIQUE KEY unique_notice (number)
-        )
-    `
-    _, err := DB.Exec(query)
-    return err
+            link VARCHAR(255) NOT NULL
+        )`,
+        `CREATE TABLE IF NOT EXISTS sw_notices (
+            number VARCHAR(255) PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            date VARCHAR(255) NOT NULL,
+            link VARCHAR(255) NOT NULL
+        )`,
+    }
+
+    for _, query := range queries {
+        _, err := DB.Exec(query)
+        if err != nil {
+            return fmt.Errorf("테이블 생성 실패: %v", err)
+        }
+    }
+    return nil
 }
 
 func Close() error {
