@@ -63,7 +63,7 @@ func GetCSE(c *gin.Context) {
     // 응답 반환
     if len(toAdd) > 0 {
         c.JSON(http.StatusOK, gin.H{
-            "message": "새로운 CSE 공지사항이 있습니다",
+            "message": "새로운 컴퓨터공학과 공지사항이 있습니다",
             "notices": toAdd,
             "sync_status": gin.H{
                 "added": len(toAdd),
@@ -72,7 +72,7 @@ func GetCSE(c *gin.Context) {
         })
     } else {
         c.JSON(http.StatusOK, gin.H{
-            "message": "새로운 CSE 공지사항이 없습니다",
+            "message": "새로운 컴퓨터공학과 공지사항이 없습니다",
             "sync_status": gin.H{
                 "added": 0,
                 "deleted": len(toDelete),

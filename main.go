@@ -3,6 +3,7 @@ package main
 import(
     "log"
     "time"
+    "io"
     "net/http"
     "github.com/JinHyeokOh01/go-crwl-server/controllers"
     "github.com/JinHyeokOh01/go-crwl-server/db"
@@ -22,10 +23,22 @@ func performCrawling() {
             log.Printf("%s 크롤링 실패: %v\n", endpoint, err)
             continue
         }
+        
+        // response body 읽기
+        body, err := io.ReadAll(resp.Body)
+        if err != nil {
+            log.Printf("%s response 읽기 실패: %v\n", endpoint, err)
+            resp.Body.Close()
+            continue
+        }
+        
+        // response 내용 출력
+        log.Printf("%s 응답 내용: %s\n", endpoint, string(body))
+        
         resp.Body.Close()
         log.Printf("%s 크롤링 완료\n", endpoint)
     }
- }
+}
 
 // 주기적 크롤링을 위한 함수
 func startPeriodicCrawling() {
@@ -40,7 +53,7 @@ func startPeriodicCrawling() {
         }
     }()
  }
- 
+
 func main() {
     // 데이터베이스 초기화
     if err := db.Initialize(); err != nil {
@@ -70,8 +83,6 @@ func main() {
 
     // 서버 시작 후 주기적 크롤링 시작
     go func() {
-        // 서버가 완전히 시작될 때까지 잠시 대기
-        time.Sleep(20 * time.Second)
         startPeriodicCrawling()
     }()
 
