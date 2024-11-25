@@ -17,12 +17,12 @@ func NewNoticeService(repo *repository.NoticeRepository) *NoticeService {
 
 // GetAllCSENotices CSE 공지사항 모두 조회
 func (s *NoticeService) GetAllCSENotices() ([]models.Notice, error) {
-    return s.repo.GetAllCSENotices()  // 메서드 이름 수정
+    return s.repo.GetAllCSENotices()
 }
 
 // GetAllSWNotices SW 공지사항 모두 조회
 func (s *NoticeService) GetAllSWNotices() ([]models.Notice, error) {
-    return s.repo.GetAllSWNotices()  // 메서드 이름 수정
+    return s.repo.GetAllSWNotices()
 }
 
 // GetCSENumbers CSE 공지사항 번호 목록 조회
@@ -45,12 +45,12 @@ func (s *NoticeService) CreateBatchSW(notices []models.Notice) error {
     return s.repo.CreateBatchSW(notices)
 }
 
-// DeleteBatchCSE CSE 공지사항 일괄 삭제 (추가)
+// DeleteBatchCSE CSE 공지사항 일괄 삭제
 func (s *NoticeService) DeleteBatchCSE(notices []models.Notice) error {
     return s.repo.DeleteBatchCSE(notices)
 }
 
-// DeleteBatchSW SW 공지사항 일괄 삭제 (추가)
+// DeleteBatchSW SW 공지사항 일괄 삭제
 func (s *NoticeService) DeleteBatchSW(notices []models.Notice) error {
     return s.repo.DeleteBatchSW(notices)
 }

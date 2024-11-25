@@ -77,12 +77,11 @@ func main() {
     r.GET("/notices/sw", noticeController.GetSWNotices)
 
     // DB 일괄 삭제 엔드포인트
-    r.DELETE("/notices", noticeController.DeleteAllNotices)        // 전체 삭제
-    r.DELETE("/notices/cse", noticeController.DeleteAllCSENotices) // CSE만 삭제
-    r.DELETE("/notices/sw", noticeController.DeleteAllSWNotices)   // SW만 삭제
+    r.DELETE("/notices", noticeController.DeleteAllNotices)
+    r.DELETE("/notices/cse", noticeController.DeleteAllCSENotices)
+    r.DELETE("/notices/sw", noticeController.DeleteAllSWNotices)
 
     /*
-    // 서버 시작 후 주기적 크롤링 시작
     go func() {
         startPeriodicCrawling()
     }()

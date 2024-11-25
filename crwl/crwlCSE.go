@@ -137,15 +137,15 @@ func crwlCSENotices(url string) ([]models.Notice, error) {
 
     var notices []models.Notice
 
-    //HTML에서 해당 태그와 일치하는 부분에서 데이터 가져오기
+    // HTML에서 해당 태그와 일치하는 부분에서 데이터 가져오기
     doc.Find("tbody tr").Each(func(i int, s *goquery.Selection) {
-        //글 번호가 '대학'과 '공지'인 것은 딱히 필요가 없는 것 같고 파싱도 잘 안되서 버림.
+        // 글 번호가 '대학'과 '공지'인 것은 딱히 필요가 없는 것 같고 파싱도 잘 안되서 버림.
         number := strings.TrimSpace(s.Find("td.align-middle").Text())
         if number == "대학" || number == "공지"{
             return
         }
         notice := models.Notice{}
-        //글 번호
+        // 글 번호
         notice.Number = number
         // 제목
         titleLink := s.Find("td.tal a")
@@ -157,7 +157,7 @@ func crwlCSENotices(url string) ([]models.Notice, error) {
 
         notices = append(notices, notice)
     })
-    //날짜순 정렬
+    // 날짜순 정렬
     sort.Sort(NoticeSlice(notices))
     return notices, nil
 }
