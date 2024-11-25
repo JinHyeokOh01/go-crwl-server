@@ -9,73 +9,83 @@ import (
     "github.com/gin-gonic/gin"
     "github.com/JinHyeokOh01/go-crwl-server/models"
     "github.com/JinHyeokOh01/go-crwl-server/repository"
+    "github.com/JinHyeokOh01/go-crwl-server/services"
 
     "net/url"
 )
 
 func getIDFromURL(urlStr string) string {
-    // 1. URL을 파싱합니다
     parsedURL, err := url.Parse(urlStr)
     if err != nil {
         return ""
     }
-    
-    // 2. 쿼리 파라미터를 파싱합니다
     values, _ := url.ParseQuery(parsedURL.RawQuery)
-    
-    // 3. wr_id 값을 가져옵니다
     return values.Get("wr_id")
 }
 
 func GetSW(c *gin.Context) {
     url := "https://swedu.khu.ac.kr/bbs/board.php?bo_table=07_01"
-    notices, err := crwlSWNotices(url)
+    crawledNotices, err := crwlSWNotices(url)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
 
-    // 데이터베이스에 자동 저장
+    // Service 계층 초기화
     noticeRepo := repository.NewNoticeRepository()
+    noticeService := services.NewNoticeService(noticeRepo)
 
-    // 기존 공지사항 번호들 조회
-    existingNotices, err := noticeRepo.GetSWNumbers()
+    // DB의 현재 공지사항 목록 조회
+    dbNotices, err := noticeService.GetAllSWNotices()
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "기존 데이터 조회 실패: " + err.Error()})
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error": "기존 데이터 조회 실패: " + err.Error(),
+        })
         return
     }
 
-    // 새로운 공지사항 필터링
-    existingMap := make(map[string]bool)
-    for _, num := range existingNotices {
-        existingMap[num] = true
-    }
+    // 동기화가 필요한 항목들 찾기
+    toAdd, toDelete := syncNotices(crawledNotices, dbNotices)
 
-    var newNotices []models.Notice
-    for _, notice := range notices {
-        if !existingMap[notice.Number] {
-            newNotices = append(newNotices, notice)
+    // 삭제할 공지사항이 있다면 삭제
+    if len(toDelete) > 0 {
+        err = noticeService.DeleteBatchSW(toDelete)
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{
+                "error": "삭제 실패: " + err.Error(),
+            })
+            return
         }
     }
 
-    // DB에 저장
-    err = noticeRepo.CreateBatchSW(notices)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "저장 실패: " + err.Error()})
-        return
+    // 추가할 공지사항이 있다면 추가
+    if len(toAdd) > 0 {
+        err = noticeService.CreateBatchSW(toAdd)
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{
+                "error": "저장 실패: " + err.Error(),
+            })
+            return
+        }
     }
 
-    // 새로운 공지사항만 응답으로 반환
-    if len(newNotices) > 0 {
+    // 응답 반환
+    if len(toAdd) > 0 {
         c.JSON(http.StatusOK, gin.H{
-            "message": "새로운 SW 공지사항이 발견되었습니다",
-            "count": len(newNotices),
-            "notices": newNotices,
+            "message": "새로운 CSE 공지사항이 있습니다",
+            "notices": toAdd,
+            "sync_status": gin.H{
+                "added": len(toAdd),
+                "deleted": len(toDelete),
+            },
         })
     } else {
         c.JSON(http.StatusOK, gin.H{
-            "message": "새로운 SW 공지사항이 없습니다",
-            "count": 0,
+            "message": "새로운 CSE 공지사항이 없습니다",
+            "sync_status": gin.H{
+                "added": 0,
+                "deleted": len(toDelete),
+            },
         })
     }
 }

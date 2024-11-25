@@ -9,61 +9,107 @@ import (
     "github.com/gin-gonic/gin"
     "github.com/JinHyeokOh01/go-crwl-server/models"
     "github.com/JinHyeokOh01/go-crwl-server/repository"
+    "github.com/JinHyeokOh01/go-crwl-server/services"
 )
 
 const cseURL = "https://ce.khu.ac.kr/ce/user/bbs/BMSR00040/list.do?menuNo=1600045"
 
 func GetCSE(c *gin.Context) {
     url := cseURL
-    notices, err := crwlCSENotices(url)
+    crawledNotices, err := crwlCSENotices(url)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
 
-    // 데이터베이스에 자동 저장
+    // Service 계층 초기화
     noticeRepo := repository.NewNoticeRepository()
-
-    // 기존 공지사항 번호들 조회
-    existingNotices, err := noticeRepo.GetCSENumbers()
+    noticeService := services.NewNoticeService(noticeRepo)
+    
+    // DB에서 현재 저장된 모든 공지사항 조회
+    dbNotices, err := noticeService.GetAllCSENotices()
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "기존 데이터 조회 실패: " + err.Error()})
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error": "DB 조회 실패: " + err.Error(),
+        })
         return
     }
 
-    // 새로운 공지사항 필터링
-    existingMap := make(map[string]bool)
-    for _, num := range existingNotices {
-        existingMap[num] = true
-    }
+    // 크롤링된 데이터와 DB 데이터를 비교하여 동기화
+    toAdd, toDelete := syncNotices(crawledNotices, dbNotices)
 
-    var newNotices []models.Notice
-    for _, notice := range notices {
-        if !existingMap[notice.Number] {
-            newNotices = append(newNotices, notice)
+    // 새로운 공지사항 추가
+    if len(toAdd) > 0 {
+        err = noticeService.CreateBatchCSE(toAdd)
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{
+                "error": "새 공지사항 저장 실패: " + err.Error(),
+            })
+            return
         }
     }
 
-    // DB에 저장
-    err = noticeRepo.CreateBatchCSE(notices)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "저장 실패: " + err.Error()})
-        return
+    // 삭제된 공지사항 제거
+    if len(toDelete) > 0 {
+        err = noticeService.DeleteBatchCSE(toDelete)
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{
+                "error": "공지사항 삭제 실패: " + err.Error(),
+            })
+            return
+        }
     }
 
-    // 새로운 공지사항만 응답으로 반환
-    if len(newNotices) > 0 {
+    // 응답 반환
+    if len(toAdd) > 0 {
         c.JSON(http.StatusOK, gin.H{
-            "message": "새로운 CSE 공지사항이 발견되었습니다",
-            "count": len(newNotices),
-            "notices": newNotices,
+            "message": "새로운 CSE 공지사항이 있습니다",
+            "notices": toAdd,
+            "sync_status": gin.H{
+                "added": len(toAdd),
+                "deleted": len(toDelete),
+            },
         })
     } else {
         c.JSON(http.StatusOK, gin.H{
             "message": "새로운 CSE 공지사항이 없습니다",
-            "count": 0,
+            "sync_status": gin.H{
+                "added": 0,
+                "deleted": len(toDelete),
+            },
         })
     }
+}
+
+func syncNotices(crawled []models.Notice, dbNotices []models.Notice) ([]models.Notice, []models.Notice) {
+    crawledMap := make(map[string]models.Notice)
+    dbMap := make(map[string]models.Notice)
+
+    // 맵으로 변환하여 빠른 검색 가능하게 함
+    for _, notice := range crawled {
+        crawledMap[notice.Number] = notice
+    }
+    for _, notice := range dbNotices {
+        dbMap[notice.Number] = notice
+    }
+
+    // 추가할 항목 찾기 (크롤링된 데이터에는 있지만 DB에는 없는 항목)
+    var toAdd []models.Notice
+    for number, notice := range crawledMap {
+        if _, exists := dbMap[number]; !exists {
+            toAdd = append(toAdd, notice)
+        }
+    }
+
+    // 삭제할 항목 찾기 (DB에는 있지만 크롤링된 데이터에는 없는 항목)
+    var toDelete []models.Notice
+    for number, notice := range dbMap {
+        if _, exists := crawledMap[number]; !exists {
+            toDelete = append(toDelete, notice)
+        }
+    }
+
+    return toAdd, toDelete
 }
 
 func crwlCSENotices(url string) ([]models.Notice, error) {
