@@ -13,19 +13,19 @@
 위 모든 과정은 자동으로 동작하며, 크롤링 주기는 1시간으로 설정했습니다. main.go 파일에서 수정 가능합니다.
 
 ## 실행 방법
-'''
+```
 git clone https://github.com/JinHyeokOh01/go-crwl-server.git
-'''
+```
 
-'''
+```
 make up
-'''
+```
 
 또는
 
-'''
+```
  docker compose up -d
-'''
+```
 
 |method|URL|기능|
 |------|---|---|
@@ -39,13 +39,13 @@ make up
 
 실행 종료 시
 
-'''
+```
 make down
-'''
+```
 
 또는
 
-'''
+```
  docker compose down
-'''
+```
 
