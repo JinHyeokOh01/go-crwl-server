@@ -12,7 +12,7 @@ import(
     "github.com/JinHyeokOh01/go-crwl-server/services"
     "github.com/gin-gonic/gin"
 )
-
+/*
 func performCrawling() {
     log.Println("크롤링 시작...")
     
@@ -53,7 +53,7 @@ func startPeriodicCrawling() {
         }
     }()
  }
-
+*/
 func main() {
     // 데이터베이스 초기화
     if err := db.Initialize(); err != nil {
@@ -81,10 +81,12 @@ func main() {
     r.DELETE("/notices/cse", noticeController.DeleteAllCSENotices) // CSE만 삭제
     r.DELETE("/notices/sw", noticeController.DeleteAllSWNotices)   // SW만 삭제
 
+    /*
     // 서버 시작 후 주기적 크롤링 시작
     go func() {
         startPeriodicCrawling()
     }()
+    */
 
     r.Run(":5000")
 }
