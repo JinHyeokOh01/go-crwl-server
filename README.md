@@ -10,8 +10,6 @@
 
 이 과정에서 DB와의 동기화가 이루어집니다.
 
-위 모든 과정은 자동으로 동작하며, 크롤링 주기는 1시간으로 설정했습니다. main.go 파일에서 수정 가능합니다.
-
 ## 실행 방법
 ```
 git clone https://github.com/JinHyeokOh01/go-crwl-server.git
